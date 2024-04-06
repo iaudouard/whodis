@@ -13,15 +13,15 @@ import (
 )
 
 type TCPServer struct {
-	listener net.Listener
-	store    store.KVStore
+	Listener net.Listener
+	Store    store.KVStore
 }
 
 func (t TCPServer) Listen() {
 	defer t.close()
 
 	for {
-		conn, err := t.listener.Accept()
+		conn, err := t.Listener.Accept()
 		if err != nil {
 			slog.Warn("error accepting connection: %w", err)
 		}
@@ -30,39 +30,47 @@ func (t TCPServer) Listen() {
 }
 
 func (t TCPServer) close() {
-	err := t.store.WriteToDisk()
+	err := t.Store.WriteToDisk()
 	if err != nil {
 		slog.Error("failed to write to disk", "error", err)
 	}
-	t.listener.Close()
+	t.Listener.Close()
 }
 
 func (t TCPServer) handleConn(conn net.Conn) {
 	defer conn.Close()
+
 	b := make([]byte, 1024)
 
 Loop:
 	for {
-		_, err := conn.Read(b)
+		n, err := conn.Read(b)
 		if err != nil && err != io.EOF {
 			slog.Error("connection goofed: %w", err)
 		}
 
-		data := parseData(b)
+		data := parseData(b[:n])
 		args := strings.Split(data, " ")
 		command := commands.ParseCommand(args[0])
 
 		res := ""
 		switch command {
 		case commands.Get:
-			if len(args) < 2 {
-				res = "missing key to get"
+			if len(args) != 2 {
+				res = fmt.Sprintf("got %d arguments, expected 2", len(args))
 				break
 			}
-			res = t.store.Get(args[1])
+			res = t.Store.Get(args[1])
 			if res == "" {
 				res = "key not found"
 			}
+		case commands.Set:
+			if len(args) < 3 {
+				res = fmt.Sprintf("got %d arguments, expected 3", len(args))
+				break
+			}
+			t.Store.Set(args[1], args[2])
+			res = "great success"
 		case commands.Exit:
 			break Loop
 		case -1:
@@ -89,8 +97,8 @@ func NewTCPServer(port uint16) (*TCPServer, error) {
 	}
 	slog.Info("started listening", "port", port)
 	s := TCPServer{
-		listener: listener,
-		store:    store.NewKVStore(),
+		Listener: listener,
+		Store:    store.NewKVStore(),
 	}
 	return &s, nil
 }
