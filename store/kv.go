@@ -18,6 +18,10 @@ func (kv *KVStore) Set(key string, value string) {
 	kv.store[key] = value
 }
 
+func (kv *KVStore) Delete(key string) {
+	delete(kv.store, key)
+}
+
 func (kv KVStore) WriteToDisk() error {
 	path, err := os.Getwd()
 	if err != nil {

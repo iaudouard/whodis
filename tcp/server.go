@@ -56,7 +56,7 @@ Loop:
 
 		res := command.ValidateArgs(args)
 		if res != "" {
-			conn.Write([]byte(res))
+			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
 			continue
 		}
 
@@ -68,6 +68,9 @@ Loop:
 			}
 		case commands.Set:
 			t.Store.Set(args[0], args[1])
+			res = "great success"
+		case commands.Delete:
+			t.Store.Delete(args[0])
 			res = "great success"
 		case commands.Exit:
 			break Loop
