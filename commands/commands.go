@@ -1,5 +1,7 @@
 package commands
 
+import "fmt"
+
 type Command int
 
 const (
@@ -7,11 +9,10 @@ const (
 	Set
 	Get
 	Delete
-	Update
 )
 
 func (c Command) String() string {
-	return [...]string{"exit", "set", "get", "delete", "update"}[c]
+	return [...]string{"exit", "set", "get", "delete"}[c]
 }
 
 func ParseCommand(s string) Command {
@@ -24,11 +25,30 @@ func ParseCommand(s string) Command {
 		return Get
 	case "delete":
 		return Delete
-	case "update":
-		return Update
 	default:
 		return -1
 	}
+}
+
+func (c Command) numberOfArgs() int {
+	switch c {
+	case Get:
+		return 1
+	case Set:
+		return 2
+	case Delete:
+		return 1
+	default:
+		return 0
+	}
+}
+
+func (c Command) ValidateArgs(args []string) string {
+	res := ""
+	if len(args) != c.numberOfArgs() {
+		res = fmt.Sprintf("expected %d arguments, got %d", c.numberOfArgs(), len(args))
+	}
+	return res
 }
 
 func (c Command) IsValid() bool {

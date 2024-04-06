@@ -50,26 +50,24 @@ Loop:
 		}
 
 		data := parseData(b[:n])
-		args := strings.Split(data, " ")
-		command := commands.ParseCommand(args[0])
+		split := strings.Split(data, " ")
+		args := split[1:]
+		command := commands.ParseCommand(split[0])
 
-		res := ""
+		res := command.ValidateArgs(args)
+		if res != "" {
+			conn.Write([]byte(res))
+			continue
+		}
+
 		switch command {
 		case commands.Get:
-			if len(args) != 2 {
-				res = fmt.Sprintf("got %d arguments, expected 2", len(args))
-				break
-			}
-			res = t.Store.Get(args[1])
+			res = t.Store.Get(args[0])
 			if res == "" {
 				res = "key not found"
 			}
 		case commands.Set:
-			if len(args) < 3 {
-				res = fmt.Sprintf("got %d arguments, expected 3", len(args))
-				break
-			}
-			t.Store.Set(args[1], args[2])
+			t.Store.Set(args[0], args[1])
 			res = "great success"
 		case commands.Exit:
 			break Loop
