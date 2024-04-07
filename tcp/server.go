@@ -47,6 +47,7 @@ Loop:
 		n, err := conn.Read(b)
 		if err != nil && err != io.EOF {
 			slog.Error("connection goofed: %w", err)
+			break Loop
 		}
 
 		data := parseData(b[:n])
@@ -73,6 +74,10 @@ Loop:
 			t.Store.Delete(args[0])
 			res = "great success"
 		case commands.Exit:
+			err = t.Store.WriteToDisk()
+			if err != nil {
+				slog.Error(err.Error())
+			}
 			break Loop
 		case -1:
 			res = "bad command"
@@ -97,9 +102,10 @@ func NewTCPServer(port uint16) (*TCPServer, error) {
 		return nil, err
 	}
 	slog.Info("started listening", "port", port)
+	store := store.NewKVStore()
 	s := TCPServer{
 		Listener: listener,
-		Store:    store.NewKVStore(),
+		Store:    store,
 	}
 	return &s, nil
 }

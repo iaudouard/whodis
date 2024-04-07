@@ -1,9 +1,13 @@
 package store
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
+)
+
+const (
+	diskFileName = "store.wdb"
 )
 
 type KVStore struct {
@@ -22,19 +26,40 @@ func (kv *KVStore) Delete(key string) {
 	delete(kv.store, key)
 }
 
+func (kv KVStore) toBytes() []byte {
+	var data []byte
+	for key, value := range kv.store {
+		data = append(data, []byte(fmt.Sprintf("%s %s\n", key, value))...)
+	}
+	return data
+}
+
 func (kv KVStore) WriteToDisk() error {
-	path, err := os.Getwd()
+	return saveToDisk(kv.toBytes(), diskFileName)
+}
+
+func (kv *KVStore) LoadFromDisk() error {
+	cwd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
-	file, err := json.MarshalIndent(kv.store, "", " ")
+
+	fp := filepath.Join(cwd, diskFileName)
+	file, err := os.Open(fp)
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(fmt.Sprintf("%s/backup.json", path), file, 0644)
-	if err != nil {
-		return err
+	defer file.Close()
+
+	var key, value string
+	for {
+		_, err := fmt.Fscanf(file, "%s %s\n", &key, &value)
+		if err != nil {
+			break
+		}
+		kv.store[key] = value
 	}
+
 	return nil
 }
 
@@ -42,6 +67,6 @@ func NewKVStore() KVStore {
 	store := KVStore{
 		store: make(map[string]string),
 	}
-	store.Set("hello", "world")
+	store.LoadFromDisk()
 	return store
 }
