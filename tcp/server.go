@@ -1,7 +1,6 @@
 package tcp
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"log/slog"
@@ -90,7 +89,6 @@ Loop:
 }
 
 func parseData(b []byte) string {
-	b = bytes.Trim(b, "\x00")
 	s := string(b)
 	s = strings.TrimSpace(s)
 	return s
