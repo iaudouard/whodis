@@ -54,9 +54,10 @@ Loop:
 		args := split[1:]
 		command := commands.ParseCommand(split[0])
 
+		slog.Info("received data", "data", data)
 		res := command.ValidateArgs(args)
 		if res != "" {
-			conn.Write([]byte(fmt.Sprintf("%s\n", res)))
+			conn.Write([]byte(res))
 			continue
 		}
 
@@ -64,14 +65,14 @@ Loop:
 		case commands.Get:
 			res = t.Store.Get(args[0])
 			if res == "" {
-				res = "key not found"
+				res = "nil"
 			}
 		case commands.Set:
 			t.Store.Set(args[0], args[1])
-			res = "great success"
+			res = "ok"
 		case commands.Delete:
 			t.Store.Delete(args[0])
-			res = "great success"
+			res = "ok"
 		case commands.Exit:
 			err = t.Store.WriteToDisk()
 			if err != nil {
@@ -84,7 +85,7 @@ Loop:
 			res = "not implemented"
 		}
 
-		conn.Write([]byte(fmt.Sprintf("%s\n", res)))
+		conn.Write([]byte(res))
 	}
 }
 
